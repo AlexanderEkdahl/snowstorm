@@ -65,7 +65,7 @@ trait Model {
 struct SimpleModel<'a> {
     attributes: &'a Vec<Attribute>,
     products: &'a HashMap<u32, Product>,
-    matches: Vec<Match>,
+    matches: &'a Vec<Match>,
     match_count: Vec<u32>,
     match_sum: u32,
 }
@@ -128,7 +128,8 @@ impl<'a> SimpleModel<'a> {
 }
 
 fn main() {
-    let mut rdr = csv::Reader::from_file("./data/attributes.csv").unwrap().has_headers(false);
+    let mut rdr =
+        csv::Reader::from_file("./data/subset_attributes.csv").unwrap().has_headers(false);
     let mut attributes = Vec::new();
     for record in rdr.decode() {
         let (name, values, compare_type): (String, String, u32) = record.unwrap();
@@ -146,7 +147,7 @@ fn main() {
         })
     }
 
-    let mut rdr = csv::Reader::from_file("./data/products.csv").unwrap().has_headers(false);
+    let mut rdr = csv::Reader::from_file("./data/subset.csv").unwrap().has_headers(false);
     let mut products: HashMap<u32, Product> = HashMap::new();
     for record in rdr.decode() {
         let (id, name, values): (u32, String, String) = record.unwrap();
@@ -164,6 +165,14 @@ fn main() {
                         });
     }
 
+    // let mut wtr = csv::Writer::from_file("./data/records.csv").unwrap();
+    // for (id, record) in products.iter() {
+    //     let result = wtr.encode((&record.id, &record.name, &record.values));
+    //     assert!(result.is_ok());
+    // }
+    // let result = wtr.flush();
+    // assert!(result.is_ok());
+
     let mut rdr = csv::Reader::from_file("./data/matches.csv").unwrap().has_headers(false);
     let mut matches = Vec::new();
     for record in rdr.decode() {
@@ -176,34 +185,29 @@ fn main() {
 
     thread_rng().shuffle(&mut matches);
 
-    let (train, test) = matches.split_at(((matches.len() as f32) * 0.999) as usize);
-
-    // println!("{:?}", products.get(&12906));
-    // println!("{:?}", products.get(&67844));
+    let (train, test) = matches.split_at(((matches.len() as f32) * 0.99) as usize);
 
     let mut simple_model = SimpleModel {
         attributes: &attributes,
         products: &products,
-        matches: train.to_vec(),
+        matches: &train.to_owned(),
         match_count: vec![0; attributes.len()],
         match_sum: 0,
     };
     simple_model.train();
-    // println!("{:?}", simple_model.match_count);
-    // simple_model.score(67844, 12906);
 
     for &Match(original, new) in test.iter() {
         let all_matches = simple_model.find_all_matches(original);
-        let ref original_name = products.get(&original).unwrap().name;
-        let ref new_name = products.get(&new).unwrap().name;
+        // let original_name = &products.get(&original).unwrap().name;
+        // let new_name = &products.get(&new).unwrap().name;
         let position = all_matches.iter().position(|&(_, x)| x == new).unwrap();
         let first_few_matches: Vec<String> = all_matches.iter()
             .take(3)
             .map(|&(score, x)| format!("({}, {})", products.get(&x).unwrap().name.clone(), score))
             .collect();
         println!("({},\t{}):\t{:?}({})",
-                 original_name,
-                 new_name,
+                 original,
+                 new,
                  first_few_matches,
                  position);
     }
