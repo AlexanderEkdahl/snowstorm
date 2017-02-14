@@ -11,6 +11,7 @@ enum CompareType {
     Equal,
     GreaterThanOrEqual,
     LessThanOrEqual,
+    IntervalMatch,
 }
 
 #[derive(Debug)]
@@ -18,6 +19,8 @@ struct Attribute {
     name: String,
     values: Vec<String>,
     compare_type: CompareType,
+    up: u16,
+    down: u16,
 }
 
 impl Attribute {
@@ -42,6 +45,7 @@ impl Attribute {
             CompareType::Equal => *b == *a,
             CompareType::GreaterThanOrEqual => *b >= *a,
             CompareType::LessThanOrEqual => *b <= *a,
+            CompareType::IntervalMatch => *b <= (*a + self.up) && *b >= (if self.down >= *a {0} else  {*a - self.down})
         }
     }
 }
@@ -118,18 +122,21 @@ fn main() {
         csv::Reader::from_file("./data/attributes.csv").unwrap().has_headers(false);
     let mut attributes = Vec::new();
     for record in rdr.decode() {
-        let (name, values, compare_type): (String, String, u32) = record.unwrap();
+        let (name, values, compare_type, up, down): (String, String, u16, u16, u16) = record.unwrap();
         let values: Vec<String> = values.split(',').map(|s| s.to_string()).collect();
         let compare_type = match compare_type {
             1 => CompareType::Equal,
             2 => CompareType::GreaterThanOrEqual,
             3 => CompareType::LessThanOrEqual,
+            6 => CompareType::IntervalMatch,
             _ => panic!("Unknown compare type: {}", compare_type),
         };
         attributes.push(Attribute {
             name: name,
             values: values,
             compare_type: compare_type,
+            up: up, 
+            down: down,
         })
     }
 
