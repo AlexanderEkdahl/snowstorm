@@ -76,15 +76,8 @@ impl<'a> SimpleModel<'a> {
             let original = self.products.get(&original).unwrap();
             let new = self.products.get(&new).unwrap();
 
-            for (i, ((a, b), attribute)) in
-                original.values.iter().zip(&new.values).zip(self.attributes).enumerate() {
-                // println!("{}: {} {:?} {} => {}",
-                //          attribute.name,
-                //          a,
-                //          attribute.compare_type,
-                //          b,
-                //          attribute.evaluate_values(a, b));
-                if attribute.evaluate_values(a, b) {
+            for (i, attribute) in self.attributes.iter().enumerate() {
+                if attribute.evaluate_values(&original.values[i], &new.values[i]) {
                     self.match_count[i] += 1;
                     self.match_sum += 1;
                 }
@@ -92,20 +85,13 @@ impl<'a> SimpleModel<'a> {
         }
     }
 
-    fn score(&self, a: u32, b: u32) -> u32 {
+    fn score(&self, a: &u32, b: &u32) -> u32 {
         let original = self.products.get(&a).unwrap();
         let new = self.products.get(&b).unwrap();
         let mut score = 0;
 
-        for (i, ((a, b), attribute)) in
-            original.values.iter().zip(&new.values).zip(self.attributes).enumerate() {
-            // println!("{}: {} {:?} {} => {}",
-            //          attribute.name,
-            //          a,
-            //          attribute.compare_type,
-            //          b,
-            //          attribute.evaluate_values(a, b));
-            if attribute.evaluate_values(a, b) {
+        for (i, attribute) in self.attributes.iter().enumerate() {
+            if attribute.evaluate_values(&original.values[i], &new.values[i]) {
                 score += self.match_count[i];
             }
         }
@@ -113,12 +99,12 @@ impl<'a> SimpleModel<'a> {
         score
     }
 
-    fn find_all_matches(&self, original: u32) -> Vec<(u32, u32)> {
+    fn find_all_matches(&self, original: &u32) -> Vec<(u32, u32)> {
         let mut matches: Vec<(u32, u32)> = Vec::new();
 
-        for (&k, _) in self.products.iter() {
+        for k in self.products.keys() {
             let score = self.score(original, k);
-            matches.push((score, k));
+            matches.push((score, *k));
         }
 
         matches.sort_by(|&(a, _), &(b, _)| b.cmp(&a));
@@ -129,7 +115,7 @@ impl<'a> SimpleModel<'a> {
 
 fn main() {
     let mut rdr =
-        csv::Reader::from_file("./data/subset_attributes.csv").unwrap().has_headers(false);
+        csv::Reader::from_file("./data/attributes.csv").unwrap().has_headers(false);
     let mut attributes = Vec::new();
     for record in rdr.decode() {
         let (name, values, compare_type): (String, String, u32) = record.unwrap();
@@ -147,7 +133,7 @@ fn main() {
         })
     }
 
-    let mut rdr = csv::Reader::from_file("./data/subset.csv").unwrap().has_headers(false);
+    let mut rdr = csv::Reader::from_file("./data/products.csv").unwrap().has_headers(false);
     let mut products: HashMap<u32, Product> = HashMap::new();
     for record in rdr.decode() {
         let (id, name, values): (u32, String, String) = record.unwrap();
@@ -185,7 +171,7 @@ fn main() {
 
     thread_rng().shuffle(&mut matches);
 
-    let (train, test) = matches.split_at(((matches.len() as f32) * 0.99) as usize);
+    let (train, test) = matches.split_at(((matches.len() as f32) * 0.999) as usize);
 
     let mut simple_model = SimpleModel {
         attributes: &attributes,
@@ -197,7 +183,7 @@ fn main() {
     simple_model.train();
 
     for &Match(original, new) in test.iter() {
-        let all_matches = simple_model.find_all_matches(original);
+        let all_matches = simple_model.find_all_matches(&original);
         // let original_name = &products.get(&original).unwrap().name;
         // let new_name = &products.get(&new).unwrap().name;
         let position = all_matches.iter().position(|&(_, x)| x == new).unwrap();
