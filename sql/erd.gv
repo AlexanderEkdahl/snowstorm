@@ -1,0 +1,17 @@
+digraph models_diagram {
+  graph[rankdir=LR, overlap=false, splines=true]
+
+  attribute_subcategories [shape=record, label="subcategories|<subcategory_id>subcategory_id: integer|<attribute_id>attribute_id: integer"]
+  attribute_values [shape=record, label="attribute_values|<attribute_id> attribute_id: integer|<product_id> product_id: integer|<value> value: character varying"]
+  attributes [shape=record, label="attributes|<id> id: integer|name: character varying|description: character varying|value: character varying|compare_type: integer|up: integer|down: integer"]
+  categories [shape=record, label="categories|<id> id: integer|name: character varying"]
+  products [shape=record, label="products|<id> id: integer|name: character varying|price: integer|description: character varying|weight: character varying|ean: character varying|measurements: character varying|<subcategory_id>subcategory_id: integer|producer: character varying"]
+  subcategories [shape=record, label="subcategories|<id> id: integer|name: character varying|description: character varying|<category_id>category_id: integer"]
+
+  attribute_subcategories:attribute_id -> attributes:id;
+  attribute_subcategories:subcategory_id -> subcategories:id;
+  attribute_values:attribute_id -> attributes:id;
+  attribute_values:product_id -> products:id;
+  products:subcategory_id -> subcategories:id;
+  subcategories:category_id -> categories:id;
+}
