@@ -37,7 +37,7 @@ SELECT idet AS id,
        compareparam1 as up,
        compareparam2 as down
 FROM pdegentyp
-WHERE comparetype IN (1, 2, 3, 6) AND et01 = 'Lista';
+WHERE comparetype IN (1, 2, 3, 6, 50) AND et01 = 'Lista';
 
 CREATE VIEW attribute_values AS
 SELECT eg00 as attribute_id,
