@@ -4,9 +4,8 @@ extern crate rand;
 
 use rustc_serialize::json;
 use std::collections::HashMap;
-use rand::{thread_rng, Rng};
+use rand::{Rng, SeedableRng, StdRng};
 use std::cmp::Ordering;
-use std::cmp;
 
 #[derive(Debug)]
 enum CompareType {
@@ -38,8 +37,10 @@ impl Attribute {
     }
 
     fn evaluate_values(&self, a: &u16, b: &u16) -> (bool, f32) {
-        if *a == 0 || *b == 0 {
+        if *a == 0 && *b == 0 {
             return (false, 0.0);
+        } else if *a == 0 || *b == 0 {
+            return (true, 0.0);
         }
 
         (true,
@@ -123,7 +124,6 @@ impl<'a> SimpleModel<'a> {
             }
         }
 
-        // this maybe null? temorayryryr temporary_brain
         self.brain = temporary_brain.iter().map(|&(x, y)| checked_division(y, x as f32).unwrap_or(0.0)).collect();
     }
 
@@ -243,7 +243,9 @@ fn main() {
         }
     }
 
-    thread_rng().shuffle(&mut matches);
+    let seed: &[_] = &[1, 2, 3, 4];
+    let mut rng: StdRng = SeedableRng::from_seed(seed);
+    rng.shuffle(&mut matches);
 
     let (train, test) = matches.split_at(((matches.len() as f32) * 0.999) as usize);
 
