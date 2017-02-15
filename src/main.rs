@@ -56,24 +56,18 @@ impl Attribute {
                  }
              }
              CompareType::LinearInterval(up, down) => {
-                 if *b == *a {
-                     1.0
-                 } else if *b > *a && up > 0 {
-                     if 1.0 - (*b - *a) as f32 * 0.5 / up as f32 > 0.0 {
+                 if *b <= *a + up && *b >= if down >= *a { 0 } else { *a - down } {
+                     if *b > *a && up > 0 {
                          1.0 - (*b - *a) as f32 * 0.5 / up as f32
-                     } else {
-                         0.0
-                     }
-                 } else if *a > *b && down > 0 {
-                     if 1.0 - (*a - *b) as f32 * 0.5 / down as f32 > 0.0 {
+                     } else if *a > *b && down > 0 {
                          1.0 - (*a - *b) as f32 * 0.5 / down as f32
                      } else {
-                         0.0
+                         1.0
                      }
                  } else {
                      0.0
                  }
-             }  
+             }
          })
     }
 }
@@ -124,7 +118,9 @@ impl<'a> SimpleModel<'a> {
             }
         }
 
-        self.brain = temporary_brain.iter().map(|&(x, y)| checked_division(y, x as f32).unwrap_or(0.0)).collect();
+        self.brain = temporary_brain.iter()
+            .map(|&(x, y)| checked_division(y, x as f32).unwrap_or(0.0))
+            .collect();
     }
 
     fn score(&self, a: &u32, b: &u32) -> f32 {
@@ -190,7 +186,7 @@ fn main() {
     let mut attributes = Vec::new();
     for record in rdr.decode() {
         let (name, values, compare_type, parameter_1, parameter_2): (String, String, u16, u16, u16) =
-            record.unwrap();
+        record.unwrap();
         let values: Vec<String> = values.split(',').map(|s| s.to_string()).collect();
         let compare_type = match compare_type {
             1 => CompareType::Equal,
@@ -256,9 +252,8 @@ fn main() {
         brain: vec![0.0; attributes.len()],
     };
     simple_model.train();
-    println!("{:?}", simple_model.brain);
 
-    simple_model.visualize_score(&33868, &60021);
+    //  simple_model.visualize_score(&33868, &60021);
 
     let mut positions: Vec<usize> = Vec::new();
 
