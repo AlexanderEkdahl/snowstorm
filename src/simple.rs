@@ -50,7 +50,7 @@ impl<'a> Simple<'a> {
         score
     }
 
-    pub fn visualize_score(&self, a: &ProductId, b: &ProductId) -> f32 {
+    pub fn visualize_score(&self, a: &ProductId, b: &ProductId) {
         let original = self.products.get(&a).unwrap();
         let new = self.products.get(&b).unwrap();
         let mut score: f32 = 0.0;
@@ -79,7 +79,8 @@ impl<'a> Simple<'a> {
             score += self.brain[i] *
                      attribute.evaluate_values(&original.values[i], &new.values[i]).1
         }
-        score
+
+        println!("Total score: {}", score);
     }
 
     pub fn find_all_matches(&self, original: &ProductId) -> Vec<(f32, ProductId)> {
